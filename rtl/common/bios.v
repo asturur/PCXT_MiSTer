@@ -9,7 +9,7 @@ module bios(
 
 reg [7:0] bios[65535:0];
 
-initial $readmemh("bios.hex", bios);
+//initial $readmemh("bios.hex", bios);
 
 always @(posedge clka)
   if (ena)

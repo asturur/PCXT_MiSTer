@@ -301,6 +301,8 @@ hps_io #(.CONF_STR(CONF_STR), .PS2DIV(2000), .PS2WE(1)) hps_io
 	.ioctl_dout(ioctl_data)	
 );
 
+wire bios_loaded;
+
 ///////////////////////   CLOCKS   ///////////////////////////////
 
 wire clk_sys;
@@ -325,8 +327,11 @@ pll pll
 	.locked(pll_locked)
 );
 
-//wire reset = RESET | status[0] | buttons[1];
-wire reset = RESET | status[0] | buttons[1] | !pll_locked | (status[14] && usdImgMtd);
+reg reset;
+
+always @(posedge clk_sys) begin
+	reset <= (RESET | status[0] | buttons[1] | !pll_locked | (status[14] && usdImgMtd) | !bios_loaded);
+end
 
 //////////////////////////////////////////////////////////////////
 
@@ -440,7 +445,9 @@ clk_div3 clk_normal // 4.77MHz
 		.ioctl_index(ioctl_index),
 		.ioctl_wr(ioctl_wr),
 		.ioctl_addr(ioctl_addr),
-		.ioctl_dout(ioctl_data)	
+		.ioctl_dout(ioctl_data),
+
+		.bios_loaded(bios_loaded)
 	);	
 	
 	/*

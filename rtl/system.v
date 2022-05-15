@@ -41,7 +41,9 @@ module system
 		input ioctl_index,
 		input ioctl_wr,
 		input ioctl_addr,
-		input ioctl_dout	
+		input ioctl_dout,
+
+		output reg bios_loaded	
     );
 
 	wire [7:0] DOUT;
@@ -184,6 +186,9 @@ module system
 							 CRTCVRAM && ~RD_n ? vram_cpu_dout : 8'hZZ
 							 );
 
+//////////////////////////////////////////////////////////////////
+
+	/*
 	bios bios
 	(
 	  .clka(clk_sys), // clk_sys or clk_cpu?
@@ -193,6 +198,37 @@ module system
 	  .dina(DOUT),
 	  .douta(bios_cpu_dout)
 	);
+	*/
+
+	reg [15:0] biosaddr;
+	reg bios_wr;
+	always @ (posedge clk_sys) 
+	begin
+		reg ioctl_downlD;	
+		if(ioctl_wr && ioctl_download) begin
+			biosaddr <= ioctl_addr;		
+			bios_wr <= 1'b1;
+		end	
+		else begin
+			biosaddr <= ADDR[15:0];	
+			bios_wr <= ~WR_n;	
+		end
+
+		ioctl_downlD <= ioctl_download;
+		if (ioctl_downlD && ~ioctl_download && ioctl_index==0) bios_loaded <= 1;
+	end
+
+	bios bios
+	(
+	  .clka(clk_sys), 
+	  .ena(~IOM && BIOSROM),
+	  .wea(bios_wr),
+	  .addra(biosaddr),
+	  .dina(ioctl_data),
+	  .douta(bios_cpu_dout)
+	);
+
+//////////////////////////////////////////////////////////////////
 
 	dpr #(.AW(18)) ram
 	(
@@ -226,7 +262,9 @@ module system
 	  .dinb(8'h0),
 	  .doutb(VRAM_DOUT)
 	);
-	
+
+//////////////////////////////////////////////////////////////////
+
 	always @ (posedge clk_sys) begin
 	
 		if (splashscreen) begin
