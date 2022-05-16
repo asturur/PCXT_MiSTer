@@ -269,6 +269,8 @@ module system
 
 	always @ (posedge clk_sys) begin
 	
+	   // $display( "bios_cpu_dout %x", bios_cpu_dout);
+
 		if (splashscreen) begin
 			if (disable_splashscreen)
 				splashscreen <= 0;

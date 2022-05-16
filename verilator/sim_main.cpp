@@ -87,7 +87,7 @@ double sc_time_stamp() {	// Called by $time in Verilog.
 	return main_time;
 }
 
-int clk_sys_freq = 48000000;
+int clk_sys_freq = 50000000;
 SimClock clk_100(1);
 SimClock clk_vga(4); 	// 25
 SimClock clk_25(4);		// 25
@@ -192,6 +192,7 @@ int verilate() {
 
 		// Output pixels on rising edge of pixel clock
 		if (clk_vga.IsRising() && top->top__DOT__ce_pix) {
+	    	//std::wcout << L"top__DOT__ce_pix " << top->top__DOT__ce_pix << std::endl;			
 			uint32_t colour = 0xFF000000 | top->VGA_B << 16 | top->VGA_G << 8 | top->VGA_R;
 			video.Clock(top->VGA_HB, top->VGA_VB, top->VGA_HS, top->VGA_VS, colour);
 		}

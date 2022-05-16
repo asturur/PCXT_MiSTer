@@ -44,26 +44,26 @@ assign ce_pix = 1'b1;
 system sys_inst
 (	
 		.clk_100(clk_100),
-		.clk_vga(clk_28_636),
+		.clk_vga(clk_vga),
 		.clk_25(clk_25),
-		.clk_sys(clk_14_318),
-		.clk_sys2(clk_7_16),
+		.clk_sys(clk_sys),
+		.clk_sys2(clk_sys2),
 		.clk_cpu(clk_cpu),
 		
 		.reset(reset),
 		.disable_splashscreen(1),
 		.IRQ0(0),
 		
-		.VGA_R(VGA_R),
-		.VGA_G(VGA_G),
-		.VGA_B(VGA_B),
+		.VGA_R(r),
+		.VGA_G(g),
+		.VGA_B(b),
 		.VGA_HSYNC(VGA_HS),
 		.VGA_VSYNC(VGA_VS),
 
-		.HBlank(VGA_HB),
-		.VBlank(VGA_VB),
+		//.HBlank(VGA_HB),
+		//.VBlank(VGA_VB),
 
-		//.de_o(VGA_DE),
+		.de_o(VGA_DE),
 
 //		.SRAM_ADDR(sramA),
 //		.SRAM_DATA(sramDQ),
@@ -102,5 +102,25 @@ system sys_inst
 		.bios_loaded(bios_loaded)
 	);	
 
-   
+	wire de_o;
+	wire [5:0] r, g, b;	
+	reg [5:0] raux, gaux, baux;	
+	
+	always @ (r, g, b) begin
+		raux = r;
+		gaux = g;
+		baux = b;
+	end
+
+	assign VGA_R = {raux, 2'b0};
+	assign VGA_G = {gaux, 2'b0};
+	assign VGA_B = {baux, 2'b0};
+
+/*
+always @ (posedge clk_sys) begin
+    $display( "reset %x", reset);
+	$display( "clk_100 %x", clk_100);
+end
+*/
+
 endmodule
