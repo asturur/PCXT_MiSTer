@@ -188,7 +188,7 @@ module system
 
 //////////////////////////////////////////////////////////////////
 
-	/*
+	
 	bios bios
 	(
 	  .clka(clk_sys), // clk_sys or clk_cpu?
@@ -198,8 +198,9 @@ module system
 	  .dina(DOUT),
 	  .douta(bios_cpu_dout)
 	);
-	*/
+	
 
+	/*
 	reg [15:0] biosaddr;
 	reg bios_wr;
 	always @ (posedge clk_sys) 
@@ -227,6 +228,7 @@ module system
 	  .dina(ioctl_data),
 	  .douta(bios_cpu_dout)
 	);
+	*/
 
 //////////////////////////////////////////////////////////////////
 
