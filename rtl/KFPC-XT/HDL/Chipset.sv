@@ -74,6 +74,7 @@ module CHIPSET (
 	 input   logic   [27:0]  clock_rate,
 	 input   logic   [1:0]   floppy_wp,
 	 output  logic   [1:0]   fdd_request,
+	 output  logic           floppy0_cs,
     // SDRAM
     input   logic           enable_sdram,
     input   logic           sdram_clock,    // 50MHz
@@ -196,6 +197,7 @@ module CHIPSET (
 		  .fdd_request                        (fdd_request),
         .dma_floppy_req                     (dma_floppy_req),
         .dma_floppy_ack                     (~dma_acknowledge_n[2]),
+		  .floppy0_cs                         (floppy0_cs),
 		  
         .timer_counter_out                  (timer_counter_out),
         .speaker_out                        (speaker_out),
@@ -261,4 +263,3 @@ module CHIPSET (
     end
 
 endmodule
-

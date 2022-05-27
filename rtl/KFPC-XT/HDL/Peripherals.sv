@@ -48,6 +48,7 @@ module PERIPHERALS #(
 	 output  logic   [1:0]   fdd_request,
     output  logic           dma_floppy_req,
     input   logic           dma_floppy_ack,
+	 output  logic           floppy0_cs,
     // Peripherals
     output  logic   [2:0]   timer_counter_out,
     output  logic           speaker_out,
@@ -62,6 +63,10 @@ module PERIPHERALS #(
     input   logic           ps2_clock,
     input   logic           ps2_data
 );
+
+
+    assign floppy0_cs = ((~floppy0_select_n) && (~io_write_n));
+ 
     //
     // chip select
     //
@@ -96,7 +101,7 @@ module PERIPHERALS #(
 	 wire    rom_select_n            = ~(address[19:16] == 5'b1111); // F0000 - FFFFF (64 KB)
 	 wire    ram_select_n            = ~(address[19:18] == 3'b00); // 00000 - 3FFFF (256 KB)
 	 
-	 wire    floppy0_select_n        = ~({address[15:2], 2'd0} == 16'h03F0) || ({address[15:1], 1'd0} == 16'h03F4) || ({address[15:0]} == 16'h03F7) ;
+	 assign  floppy0_select_n        = ~(({address[15:2], 2'd0} == 16'h03F0) || ({address[15:1], 1'd0} == 16'h03F4) || ({address[15:0]} == 16'h03F7)) ;
 	 wire    mgmt_fdd_select_n       = ~(mgmt_address[15:8] == 8'hF2);
 
     //
@@ -391,51 +396,50 @@ floppy floppy
     // data_bus_out
     //
     always_comb begin
-        if (~interrupt_acknowledge_n) begin
+        if (~interrupt_acknowledge_n) begin		      
             data_bus_out_from_chipset = 1'b1;
             data_bus_out = interrupt_data_bus_out;
         end
-        if ((dma_floppy_ack) && (~io_read_n)) begin
+        if ((dma_floppy_ack) && (~io_read_n)) begin		      
             data_bus_out_from_chipset = 1'b1;
             data_bus_out = dma_floppy_writedata;
         end
-        else if ((~interrupt_chip_select_n) && (~io_read_n)) begin
+        else if ((~interrupt_chip_select_n) && (~io_read_n)) begin		      
             data_bus_out_from_chipset = 1'b1;
             data_bus_out = interrupt_data_bus_out;
         end
-        else if ((~timer_chip_select_n) && (~io_read_n)) begin
+        else if ((~timer_chip_select_n) && (~io_read_n)) begin		      
             data_bus_out_from_chipset = 1'b1;
             data_bus_out = timer_data_bus_out;
         end
-        else if ((~ppi_chip_select_n) && (~io_read_n)) begin
+        else if ((~ppi_chip_select_n) && (~io_read_n)) begin		      
             data_bus_out_from_chipset = 1'b1;
             data_bus_out = ppi_data_bus_out;
         end
-        else if ((~floppy0_select_n) && (~io_read_n)) begin
+        else if ((~floppy0_select_n) && (~io_read_n)) begin		      
             data_bus_out_from_chipset = 1'b1;
             data_bus_out = fdd_cpu_dout;
         end
-        else if ((~cga_chip_select_n) && (~memory_read_n)) begin
+        else if ((~cga_chip_select_n) && (~memory_read_n)) begin		      
             data_bus_out_from_chipset = 1'b1;
             data_bus_out = vram_cpu_dout;
         end
-		  else if ((~rom_select_n) && (~memory_read_n)) begin
+		  else if ((~rom_select_n) && (~memory_read_n)) begin		      
             data_bus_out_from_chipset = 1'b1;
             data_bus_out = bios_cpu_dout;
         end
-		  else if ((~ram_select_n) && (~memory_read_n)) begin
+		  else if ((~ram_select_n) && (~memory_read_n)) begin		      
             data_bus_out_from_chipset = 1'b1;
             data_bus_out = ram_cpu_dout;			
         end
-		  else if (CRTC_OE) begin
+		  else if (CRTC_OE) begin		      
             data_bus_out_from_chipset = 1'b1;
             data_bus_out = CRTC_DOUT;			
         end
-        else begin
+        else begin            
             data_bus_out_from_chipset = 1'b0;
             data_bus_out = 8'b00000000;
         end
     end
 
 endmodule
-

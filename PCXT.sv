@@ -193,7 +193,9 @@ assign LED_POWER = 0;
 assign BUTTONS = 0;
 
 
-led fdd_led(clk_cpu, |mgmt_req[7:6], LED_USER);
+//led fdd_led(clk_cpu, |mgmt_req[7:6], LED_USER);
+led fdd_led(clk_cpu, floppy_io_cs_enabled, LED_USER);
+
 //////////////////////////////////////////////////////////////////
 
 wire [1:0] ar = status[9:8];
@@ -459,6 +461,7 @@ always @(posedge CLK_50M) cur_rate <= 30000000;
 	
 	end
 	
+	
     wire [7:0] data_bus;
     wire INTA_n;	
     wire [19:0] cpu_ad_out;
@@ -470,6 +473,9 @@ always @(posedge CLK_50M) cur_rate <= 30000000;
 
     wire lock_n;
     wire [2:0]processor_status;	 
+	 wire floppy0_cs;
+	 reg floppy_io_cs_enabled = 1'b0;
+	 always @ (posedge CLK_50M) if (floppy0_cs) floppy_io_cs_enabled <= 1'b1;
 
    CHIPSET u_CHIPSET (
         .clock                              (clk_cpu),
@@ -525,6 +531,7 @@ always @(posedge CLK_50M) cur_rate <= 30000000;
 	     .mgmt_address                       (mgmt_addr),
 	     .mgmt_write                         (mgmt_wr),
 	     .mgmt_read                          (mgmt_rd),
+		  .floppy0_cs                         (floppy0_cs),
 		  .clock_rate                         (cur_rate),
 		  .floppy_wp                          (status[2:1]),
 		  .fdd_request                        (mgmt_req[7:6]),
@@ -558,6 +565,7 @@ always @(posedge clk_cpu) begin
 		cpu_address <= cpu_ad_out;
 	else
 		cpu_address <= cpu_address;
+	
 end	
 	
 	/*
