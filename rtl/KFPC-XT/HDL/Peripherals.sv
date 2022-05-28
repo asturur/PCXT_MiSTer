@@ -61,11 +61,18 @@ module PERIPHERALS #(
     output  logic   [7:0]   port_c_out,
     output  logic   [7:0]   port_c_io,
     input   logic           ps2_clock,
-    input   logic           ps2_data
+    input   logic           ps2_data,
+    // roms
+    input   logic   [7:0]  ioctl_data,
+    input   logic   [24:0] ioctl_addr,
+    input   logic          ioctl_download,
+    input   logic          ioctl_wr,
+    input   logic   [15:0] ioctl_index,
+	 output  reg            bios_loaded
 );
 
 
-    assign floppy0_cs = ((~floppy0_select_n) && (~io_write_n));
+    assign floppy0_cs = ((~floppy0_select_n) && (~io_read_n));
  
     //
     // chip select
@@ -289,7 +296,9 @@ module PERIPHERALS #(
 	 wire [7:0] bios_cpu_dout;
 	 wire [7:0] vram_cpu_dout;
 	 wire [7:0] fdd_cpu_dout;
+	 wire [7:0] fdd_cpu_dout_latch;
 	 wire [7:0] dma_floppy_writedata;
+	 wire [7:0] dma_floppy_writedata_latch;
 
     vram vram
 	 (
@@ -315,17 +324,69 @@ module PERIPHERALS #(
 	  .addra(address[17:0]),
 	  .dina(internal_data_bus),
 	  .douta(ram_cpu_dout)
-	);
+	);  
+	
+	reg [15:0] biosaddr;	
+	reg bios_wr;	
+	always @ (posedge clock) 
+	begin
+		reg ioctl_downlD;	
+		if(ioctl_wr && ioctl_download) begin
+			biosaddr <= ioctl_addr;			
+			bios_wr <= 1'b1;
+		end	
+		else begin
+			biosaddr <= address[15:0];			
+			bios_wr <= 1'b0;
+		end
+
+		ioctl_downlD <= ioctl_download;
+		if (ioctl_downlD && ~ioctl_download && ioctl_index==0) bios_loaded <= 1;
+	end
 	
 	bios bios
 	(
         .clka(clock),
-        .ena(~address_enable_n && ~rom_select_n),
-        .wea(~memory_write_n),
-        .addra(address[15:0]),
-        .dina(internal_data_bus),
+        .ena((~address_enable_n && ~rom_select_n) || ioctl_downlD),
+        .wea(bios_wr),
+        .addra(biosaddr),
+        .dina(ioctl_data),
         .douta(bios_cpu_dout)
 	);
+
+    logic   floppy_io_read;
+    logic   prev_floppy_io_read;
+    logic   floppy_io_read_edge;
+
+    assign  floppy_io_read  = ~io_read_n;
+    always_ff @(negedge clock, posedge reset) begin
+        if (reset)
+            prev_floppy_io_read <= 1'b0;
+        else
+            prev_floppy_io_read <= floppy_io_read;
+    end
+    assign  floppy_io_read_edge = (prev_floppy_io_read != floppy_io_read) && (floppy_io_read == 1'b1);
+
+    logic   floppy_io_write;
+    logic   prev_floppy_io_write;
+    logic   floppy_io_write_edge;
+
+    assign  floppy_io_write = ~io_write_n;
+    always_ff @(negedge clock, posedge reset) begin
+        if (reset)
+            prev_floppy_io_write <= 1'b0;
+        else
+            prev_floppy_io_write <= floppy_io_write;
+    end
+    assign  floppy_io_write_edge = (prev_floppy_io_write != floppy_io_write) && (floppy_io_write == 1'b0);
+
+    logic   floppy_write_data;
+    always_ff @(negedge clock, posedge reset) begin
+        if (reset)
+            floppy_write_data <= 8'h00;
+        else
+            floppy_write_data <= internal_data_bus;
+    end
 
 
 floppy floppy
@@ -336,17 +397,17 @@ floppy floppy
 	.clock_rate        (clock_rate),
 
 	.io_address        (address[2:0]),
-	.io_writedata      (internal_data_bus),
-	.io_read           (~io_read_n & ~floppy0_select_n),
-	.io_write          (~io_write_n & ~floppy0_select_n),
+	.io_writedata      (floppy_write_data),
+	.io_read           (~floppy0_select_n & floppy_io_read_edge),
+	.io_write          (~floppy0_select_n & floppy_io_write_edge),
 	.io_readdata       (fdd_cpu_dout),
 	
 //	.fdd0_inserted     (fdd0_inserted),
 
 	.dma_req           (dma_floppy_req),
-	.dma_ack           (dma_floppy_ack),
+	.dma_ack           (dma_floppy_ack & (floppy_io_read_edge | floppy_io_write_edge)),
 	.dma_tc            (terminal_count_n),
-	.dma_readdata      (internal_data_bus),
+	.dma_readdata      (floppy_write_data),
 	.dma_writedata     (dma_floppy_writedata),
 
 	.mgmt_address      (mgmt_address[3:0]),
@@ -362,6 +423,31 @@ floppy floppy
 	.irq               (fdd_interrupt)
 );
 
+    logic   prev_floppy_io_read_edge;
+    always_ff @(negedge clock, posedge reset) begin
+        if (reset)
+            prev_floppy_io_read_edge <= 1'b0;
+        else
+            prev_floppy_io_read_edge <= floppy_io_read_edge;
+    end
+
+    always_ff @(negedge clock, posedge reset) begin
+        if (reset)
+            fdd_cpu_dout_latch <= 8'h00;
+        else if (prev_floppy_io_read_edge)
+            fdd_cpu_dout_latch <= fdd_cpu_dout;
+        else
+            fdd_cpu_dout_latch <= fdd_cpu_dout_latch;
+    end
+
+    always_ff @(negedge clock, posedge reset) begin
+        if (reset)
+            dma_floppy_writedata_latch <= 8'h00;
+        else if (prev_floppy_io_read_edge)
+            dma_floppy_writedata_latch <= dma_floppy_writedata;
+        else
+            dma_floppy_writedata_latch <= dma_floppy_writedata_latch;
+    end
 	
 	 
     //
@@ -402,7 +488,7 @@ floppy floppy
         end
         if ((dma_floppy_ack) && (~io_read_n)) begin		      
             data_bus_out_from_chipset = 1'b1;
-            data_bus_out = dma_floppy_writedata;
+            data_bus_out = dma_floppy_writedata_latch;
         end
         else if ((~interrupt_chip_select_n) && (~io_read_n)) begin		      
             data_bus_out_from_chipset = 1'b1;
@@ -418,7 +504,7 @@ floppy floppy
         end
         else if ((~floppy0_select_n) && (~io_read_n)) begin		      
             data_bus_out_from_chipset = 1'b1;
-            data_bus_out = fdd_cpu_dout;
+            data_bus_out = fdd_cpu_dout_latch;
         end
         else if ((~cga_chip_select_n) && (~memory_read_n)) begin		      
             data_bus_out_from_chipset = 1'b1;

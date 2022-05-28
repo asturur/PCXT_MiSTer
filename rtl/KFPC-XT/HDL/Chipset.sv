@@ -89,7 +89,14 @@ module CHIPSET (
     output  logic   [15:0]  sdram_dq_out,
     output  logic           sdram_dq_io,
     output  logic           sdram_ldqm,
-    output  logic           sdram_udqm
+    output  logic           sdram_udqm,
+	 // roms
+    input   logic   [7:0]  ioctl_data,
+    input   logic   [24:0] ioctl_addr,
+    input   logic          ioctl_download,
+    input   logic          ioctl_wr,
+    input   logic   [15:0] ioctl_index,
+	 output  reg            bios_loaded
 );
 
     logic           dma_ready;
@@ -210,7 +217,13 @@ module CHIPSET (
         .port_c_out                         (port_c_out),
         .port_c_io                          (port_c_io),
         .ps2_clock                          (ps2_clock),
-        .ps2_data                           (ps2_data)
+        .ps2_data                           (ps2_data),
+		  .ioctl_addr                         (ioctl_addr),
+        .ioctl_data                         (ioctl_data),
+        .ioctl_download                     (ioctl_download),
+        .ioctl_index                        (ioctl_index),
+        .ioctl_wr                           (ioctl_wr),
+		  .bios_loaded                        (bios_loaded)		  
     );
 
     RAM u_RAM (

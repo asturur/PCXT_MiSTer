@@ -204,7 +204,8 @@ assign VIDEO_ARY = (!ar) ? 12'd3 : 12'd0;
 
 `include "build_id.v" 
 localparam CONF_STR = {
-	"AO486;;", // PCXT (The only thing left to do is to prepare the project in Main_MiSTer)
+	"PCXT;;",
+//	"AO486;;", // PCXT (The only thing left to do is to prepare the project in Main_MiSTer)
 	"S0,IMGIMAVFD,Floppy A:;",
 	"S1,IMGIMAVFD,Floppy B:;",
 	"O12,Write Protect,None,A:,B:,A: & B:;",
@@ -263,7 +264,10 @@ wire  [7:0] ioctl_data;
 wire [21:0] gamma_bus;
 
 // PS2DIV : la mitad del divisor que necesitas para dividir el clk_sys que le das al hpio, para que te de entre 10Khz y 16Kzh
-hps_io #(.CONF_STR(CONF_STR), .CONF_STR_BRAM(0), .PS2DIV(2000), .PS2WE(1), .WIDE(1)) hps_io
+//hps_io #(.CONF_STR(CONF_STR), .CONF_STR_BRAM(0), .PS2DIV(2000), .PS2WE(1), .WIDE(1)) hps_io
+hps_io #(.CONF_STR(CONF_STR), .CONF_STR_BRAM(0), .PS2DIV(2000), .PS2WE(1)) hps_io
+//hps_io #(.CONF_STR(CONF_STR), .PS2DIV(2000), .PS2WE(1)) hps_io
+
 (
 	.clk_sys(CLK_50M), // clk_cpu
 	.HPS_BUS(HPS_BUS),	
@@ -377,7 +381,7 @@ pll_cfg pll_cfg
 );
 
 //wire reset = RESET | status[0] | buttons[1];
-wire reset = RESET | status[0] | buttons[1] | !pll_locked | (status[14] && usdImgMtd);
+wire reset = (RESET | status[0] | buttons[1] | !pll_locked | (status[14] && usdImgMtd) | !bios_loaded);
 
 //////////////////////////////////////////////////////////////////
 
@@ -470,6 +474,7 @@ always @(posedge CLK_50M) cur_rate <= 30000000;
     wire processor_ready;	
     wire interrupt_to_cpu;
     wire address_latch_enable;
+	 wire bios_loaded;
 
     wire lock_n;
     wire [2:0]processor_status;	 
@@ -535,7 +540,15 @@ always @(posedge CLK_50M) cur_rate <= 30000000;
 		  .clock_rate                         (cur_rate),
 		  .floppy_wp                          (status[2:1]),
 		  .fdd_request                        (mgmt_req[7:6]),
-		  .enable_sdram                       (0)	   // -> During the first tests, it shall not be used.
+		  .enable_sdram                       (0),	   // -> During the first tests, it shall not be used.
+		  
+		  .ioctl_addr                         (ioctl_addr),
+        .ioctl_data                         (ioctl_data),
+        .ioctl_download                     (ioctl_download),
+        .ioctl_index                        (ioctl_index),
+        .ioctl_wr                           (ioctl_wr),
+		  .bios_loaded                        (bios_loaded)		  
+
 
     );
 	 
