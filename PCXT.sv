@@ -178,7 +178,7 @@ assign {UART_RTS, UART_TXD, UART_DTR} = 0;
 //assign {SD_SCK, SD_MOSI, SD_CS} = 'Z;
 assign {SDRAM_DQ, SDRAM_A, SDRAM_BA, SDRAM_CLK, SDRAM_CKE, SDRAM_DQML, SDRAM_DQMH, SDRAM_nWE, SDRAM_nCAS, SDRAM_nRAS, SDRAM_nCS} = 'Z;
 //assign SDRAM_CLK = CLK_50M;
-//assign {DDRAM_CLK, DDRAM_BURSTCNT, DDRAM_ADDR, DDRAM_DIN, DDRAM_BE, DDRAM_RD, DDRAM_WE} = '0;  
+assign {DDRAM_CLK, DDRAM_BURSTCNT, DDRAM_ADDR, DDRAM_DIN, DDRAM_BE, DDRAM_RD, DDRAM_WE} = '0;
 
 assign VGA_SL = 0;
 assign VGA_F1 = 0;
@@ -552,7 +552,10 @@ always @(posedge clk_4_77)
 	     .uart_dcd_n                        (uart_dcd),
 	     .uart_dsr_n                        (uart_dsr),
 	     .uart_rts_n                        (uart_rts),
-	     .uart_dtr_n                        (uart_dtr)
+	     .uart_dtr_n                        (uart_dtr),
+		  .SRAM_ADDR                         (sramA),
+		  .SRAM_DATA                         (sramDQ),
+		  .SRAM_WE_n                         (sramWe)
     );
 	 
 	wire [15:0] jtopl2_snd_e;	
@@ -658,7 +661,7 @@ always @(posedge clk_4_77)
 	assign VGA_G = {status[4] ? g : gaux, 2'b0};
 	assign VGA_B = {status[4] ? b : baux, 2'b0};
 
-/*
+
 // SRAM management
 wire sramOe = ~sramWe;
 wire sramWe;
@@ -682,7 +685,7 @@ Mister_sRam sRam
   .SRAM_nOE    (sramOe), 
   .SRAM_nWE    (sramWe) 
 );
-*/
+
 
 reg vsd = 0;
 always @(posedge CLK_50M) if(usdImgMtd[0]) vsd <= |usdImgSz;

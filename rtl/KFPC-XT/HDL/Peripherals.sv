@@ -76,7 +76,10 @@ module PERIPHERALS #(
 	 input   logic           uart_dcd_n,
 	 input   logic           uart_dsr_n,
 	 output  logic           uart_rts_n,
-	 output  logic           uart_dtr_n
+	 output  logic           uart_dtr_n,
+	 output          [20:0]  SRAM_ADDR,
+	 inout           [7:0]   SRAM_DATA,
+	 output                  SRAM_WE_n
 
 	 
 );
@@ -115,7 +118,7 @@ module PERIPHERALS #(
     wire    cga_chip_select_n      = ~(enable_cga & (address[19:14] == 6'b1011_10)); // B8000 - BFFFF (32 KB)
 	 wire    mda_chip_select_n      = ~(enable_mda & (address[19:14] == 6'b1011_00)); // B0000 - B7FFF (32 KB)
 	 wire    rom_select_n           = ~(address[19:16] == 4'b1111); // F0000 - FFFFF (64 KB)
-	 wire    ram_select_n           = ~(address[19:18] == 2'b00); // 00000 - 3FFFF (256 KB)
+	 wire    ram_select_n           = ~(address[19] == 1'b0); // 00000 - 7FFFF (512 KB)
 	 wire    uart_cs                = ({address[15:3], 3'd0} == 16'h03F8);
 	 
 
@@ -584,14 +587,18 @@ module PERIPHERALS #(
 	
 
 	
-	ram #(.AW(18)) mram
+	ram #(.AW(19)) mram
 	(
-	  .clka(clock),
-	  .ena(~address_enable_n && ~ram_select_n),
-	  .wea(~memory_write_n),
-	  .addra(address[17:0]),
-	  .dina(internal_data_bus),
-	  .douta(ram_cpu_dout)
+	     .clka                       (clock),
+	     .ena                        (~address_enable_n && ~ram_select_n),
+	     .wea                        (~memory_write_n),
+	     .addra                      (address[18:0]),
+	     .dina                       (internal_data_bus),
+	     .douta                      (ram_cpu_dout),
+	     .SRAM_ADDR                  (SRAM_ADDR),
+	     .SRAM_DATA                  (SRAM_DATA),
+	     .SRAM_WE_n                  (SRAM_WE_n)
+	  
 	);
 	
 	
