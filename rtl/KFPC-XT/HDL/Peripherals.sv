@@ -118,7 +118,7 @@ module PERIPHERALS #(
     wire    cga_chip_select_n      = ~(enable_cga & (address[19:14] == 6'b1011_10)); // B8000 - BFFFF (32 KB)
 	 wire    mda_chip_select_n      = ~(enable_mda & (address[19:14] == 6'b1011_00)); // B0000 - B7FFF (32 KB)
 	 wire    rom_select_n           = ~(address[19:16] == 4'b1111); // F0000 - FFFFF (64 KB)
-	 wire    ram_select_n           = ~(address[19] == 1'b0); // 00000 - 7FFFF (512 KB)
+	 wire    ram_select_n           = ~(address[19:0] < 24'h0A0000); // 00000 - 9FFFF (640 KB)	 
 	 wire    uart_cs                = ({address[15:3], 3'd0} == 16'h03F8);
 	 
 
@@ -587,12 +587,12 @@ module PERIPHERALS #(
 	
 
 	
-	ram #(.AW(19)) mram
+	ram #(.AW(20)) mram
 	(
 	     .clka                       (clock),
 	     .ena                        (~address_enable_n && ~ram_select_n),
 	     .wea                        (~memory_write_n),
-	     .addra                      (address[18:0]),
+	     .addra                      (address[19:0]),
 	     .dina                       (internal_data_bus),
 	     .douta                      (ram_cpu_dout),
 	     .SRAM_ADDR                  (SRAM_ADDR),

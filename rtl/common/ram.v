@@ -16,9 +16,9 @@ reg [7:0] data;
 assign SRAM_DATA = (ena && ~SRAM_WE_n) ? data : 8'hZZ;
 //reg [7:0] ram[(2**AW)-1:0];
 
-always @(posedge clka)
+always @(negedge clka)
   if (ena) begin
-      SRAM_ADDR <= {1'b0, addra};
+      SRAM_ADDR = {1'b0, addra};
 		if (wea) begin
 		   SRAM_WE_n <= 1'b0;			
 			data <= dina;
